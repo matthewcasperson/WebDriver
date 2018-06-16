@@ -46,6 +46,7 @@ public class ChromeDecorator extends AutomatedBrowserBase {
 
     @Override
     public void destroy() {
+        getAutomatedBrowser().destroy();
         FileUtils.deleteQuietly(this.userData);
     }
 }
