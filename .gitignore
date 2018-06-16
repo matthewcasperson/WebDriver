@@ -2,3 +2,4 @@
 .idea/tasks.xml
 .serverless
 *.har
+dependency-reduced-pom.xml
