@@ -1,5 +1,6 @@
 package com.matthewcasperson;
 
+import com.matthewcasperson.events.CloudWatchEventNotification;
 import com.matthewcasperson.events.EmailNotification;
 import com.matthewcasperson.events.EventNotification;
 import org.apache.commons.io.FileUtils;
@@ -9,13 +10,18 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class LambdaEntry {
     private static final String CHROME_HEADLESS_PACKAGE = "https://s3.amazonaws.com/webdriver-testing-resources/stable-headless-chromium-amazonlinux-2017-03.zip";
     private static final String CHROME_DRIVER = "https://s3.amazonaws.com/webdriver-testing-resources/chromedriver_linux64.zip";
-    private static final EventNotification EMAIL_NOTIFICATION = new EmailNotification("admin@matthewcasperson.com");
+    private static final List<EventNotification> NOTIFICATIONS = Arrays.asList(
+            new EmailNotification("admin@matthewcasperson.com"),
+            new CloudWatchEventNotification());
 
     public String runCucumber(final String feature, final String id) throws Throwable {
 
@@ -41,10 +47,9 @@ public class LambdaEntry {
                             featureFile.getAbsolutePath()},
                     Thread.currentThread().getContextClassLoader());
 
-            EMAIL_NOTIFICATION.sendNotification(
-                    id,
-                    success == 0,
-                    FileUtils.readFileToString(txtOutputFile, Charset.defaultCharset()));
+            final String resultText = FileUtils.readFileToString(txtOutputFile, Charset.defaultCharset());
+
+            NOTIFICATIONS.forEach(n -> n.sendNotification(id, success == 0, resultText));
             return FileUtils.readFileToString(outputFile, Charset.defaultCharset());
         } finally {
             FileUtils.deleteQuietly(driverDirectory);
