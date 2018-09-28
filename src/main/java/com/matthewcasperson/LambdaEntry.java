@@ -1,9 +1,7 @@
 package com.matthewcasperson;
 
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
-import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClientBuilder;
-import com.amazonaws.services.simpleemail.model.*;
+import com.matthewcasperson.events.EmailNotification;
+import com.matthewcasperson.events.EventNotification;
 import org.apache.commons.io.FileUtils;
 
 import java.io.*;
@@ -17,8 +15,9 @@ import java.util.zip.ZipInputStream;
 public class LambdaEntry {
     private static final String CHROME_HEADLESS_PACKAGE = "https://s3.amazonaws.com/webdriver-testing-resources/stable-headless-chromium-amazonlinux-2017-03.zip";
     private static final String CHROME_DRIVER = "https://s3.amazonaws.com/webdriver-testing-resources/chromedriver_linux64.zip";
+    private static final EventNotification EMAIL_NOTIFICATION = new EmailNotification("admin@matthewcasperson.com");
 
-    public String runCucumber(String feature) throws Throwable {
+    public String runCucumber(final String feature, final String id) throws Throwable {
 
         File driverDirectory = null;
         File chromeDirectory = null;
@@ -33,7 +32,7 @@ public class LambdaEntry {
             txtOutputFile = Files.createTempFile("output", ".txt").toFile();
             featureFile = writeFeatureToFile(feature);
 
-            cucumber.api.cli.Main.run(
+            final int success = cucumber.api.cli.Main.run(
                     new String[]{
                             "--monochrome",
                             "--glue", "academy.learnprogramming.decoratorbase",
@@ -42,8 +41,10 @@ public class LambdaEntry {
                             featureFile.getAbsolutePath()},
                     Thread.currentThread().getContextClassLoader());
 
-
-            sendEmail("admin@matthewcasperson.com", FileUtils.readFileToString(txtOutputFile, Charset.defaultCharset()));
+            EMAIL_NOTIFICATION.sendNotification(
+                    id,
+                    success == 0,
+                    FileUtils.readFileToString(txtOutputFile, Charset.defaultCharset()));
             return FileUtils.readFileToString(outputFile, Charset.defaultCharset());
         } finally {
             FileUtils.deleteQuietly(driverDirectory);
@@ -118,27 +119,5 @@ public class LambdaEntry {
         }
 
         return featureFile;
-    }
-
-    private void sendEmail(final String to, final String results) {
-        try {
-            final AmazonSimpleEmailService client =
-                    AmazonSimpleEmailServiceClientBuilder.standard()
-                            .withRegion(Regions.US_EAST_1).build();
-            final SendEmailRequest request = new SendEmailRequest()
-                    .withDestination(
-                            new Destination().withToAddresses(to))
-                    .withMessage(new Message()
-                            .withBody(new Body()
-                                    .withText(new Content()
-                                            .withCharset("UTF-8").withData(results)))
-                            .withSubject(new Content()
-                                    .withCharset("UTF-8").withData("WebDriver Test Results")))
-                    .withSource("admin@matthewcasperson.com");
-            client.sendEmail(request);
-        } catch (final Exception ex) {
-            System.out.println("The email was not sent. Error message: "
-                    + ex.getMessage());
-        }
     }
 }
