@@ -16,7 +16,7 @@ package:
 
 functions:
   runCucumber:
-    handler: academy.learnprogramming.LambdaEntry::runCucumber
+    handler: LambdaEntry::runCucumber
     timeout: 300
     memorySize: 512
     events:
