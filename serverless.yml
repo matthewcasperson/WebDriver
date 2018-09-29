@@ -16,7 +16,7 @@ package:
 
 functions:
   runCucumber:
-    handler: LambdaEntry::runCucumber
+    handler: com.matthewcasperson.LambdaEntry::runCucumber
     timeout: 300
     memorySize: 512
     events:
@@ -29,7 +29,7 @@ functions:
               headers:
                 'X-Amz-Invocation-Type': true
             template:
-              text/plain: "\"$util.escapeJavaScript($input.body).replaceAll(\"\\'\",\"'\")\""
+              text/plain: "{\"feature\":\"$util.escapeJavaScript($input.body).replaceAll(\"\\'\",\"'\")\", \"id\": \"$util.escapeJavaScript($input.params().header.get('Test-Id')).replaceAll(\"\\'\",\"'\")\"}"
           response:
             headers:
               Content-Type: "'application/json'"

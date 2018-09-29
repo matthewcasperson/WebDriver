@@ -1,6 +1,5 @@
 package com.matthewcasperson;
 
-import com.matthewcasperson.events.CloudWatchEventNotification;
 import com.matthewcasperson.events.EmailNotification;
 import com.matthewcasperson.events.EventNotification;
 import org.apache.commons.io.FileUtils;
@@ -12,46 +11,79 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class LambdaEntry {
-    private static final String CHROME_HEADLESS_PACKAGE = "https://s3.amazonaws.com/webdriver-testing-resources/stable-headless-chromium-amazonlinux-2017-03.zip";
-    private static final String CHROME_DRIVER = "https://s3.amazonaws.com/webdriver-testing-resources/chromedriver_linux64.zip";
-    private static final List<EventNotification> NOTIFICATIONS = Arrays.asList(
-            new EmailNotification("admin@matthewcasperson.com"),
-            new CloudWatchEventNotification());
+class LambdaInput {
+    private String feature;
+    private String id;
 
-    public String runCucumber(final String feature, final String id) throws Throwable {
+    public String getFeature() {
+        return feature;
+    }
+
+    public void setFeature(String feature) {
+        this.feature = feature;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+}
+
+public class LambdaEntry {
+    private static final String CHROME_HEADLESS_PACKAGE = "https://s3.amazonaws.com/webdriver-testing-resources/stable-headless-chromium-amazonlinux-2017-03(1).zip";
+    private static final String CHROME_DRIVER = "https://s3.amazonaws.com/webdriver-testing-resources/chromedriver_linux64(1).zip";
+    private static final List<EventNotification> NOTIFICATIONS = Arrays.asList(
+            new EmailNotification("admin@matthewcasperson.com"));
+
+    public String runCucumber(final LambdaInput details) throws Throwable {
+
+        System.out.println("STARTING CUCUMBER WEBDRIVER TEST");
+        System.out.println("FEATURE");
+        System.out.println(details.getFeature());
+        System.out.println("ID");
+        System.out.println(details.getId());
 
         File driverDirectory = null;
         File chromeDirectory = null;
         File outputFile = null;
         File txtOutputFile = null;
         File featureFile = null;
+        boolean success = false;
 
         try {
             driverDirectory = downloadChromeDriver();
             chromeDirectory = downloadChromeHeadless();
             outputFile = Files.createTempFile("output", ".json").toFile();
             txtOutputFile = Files.createTempFile("output", ".txt").toFile();
-            featureFile = writeFeatureToFile(feature);
+            featureFile = writeFeatureToFile(details.getFeature());
 
-            final int success = cucumber.api.cli.Main.run(
+            final int retCode = cucumber.api.cli.Main.run(
                     new String[]{
                             "--monochrome",
-                            "--glue", "academy.learnprogramming.decoratorbase",
-                            "--format", "json:" + outputFile.toString(),
-                            "--format", "pretty:" + txtOutputFile.toString(),
+                            "--glue", "com.matthewcasperson.decoratorbase",
+                            "--plugin", "json:" + outputFile.toString(),
+                            "--plugin", "pretty:" + txtOutputFile.toString(),
                             featureFile.getAbsolutePath()},
                     Thread.currentThread().getContextClassLoader());
 
+            success = retCode == 0;
+
             final String resultText = FileUtils.readFileToString(txtOutputFile, Charset.defaultCharset());
 
-            NOTIFICATIONS.forEach(n -> n.sendNotification(id, success == 0, resultText));
+            for (final EventNotification notification : NOTIFICATIONS) {
+                notification.sendNotification(details.getId(), success, resultText);
+            }
+
             return FileUtils.readFileToString(outputFile, Charset.defaultCharset());
         } finally {
+            System.out.println((success ? "SUCCESS" : "ERROR") + " Cucumber Test ID " + details.getId());
+
             FileUtils.deleteQuietly(driverDirectory);
             FileUtils.deleteQuietly(chromeDirectory);
             FileUtils.deleteQuietly(outputFile);

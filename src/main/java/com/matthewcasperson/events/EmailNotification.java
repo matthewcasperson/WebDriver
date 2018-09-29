@@ -26,7 +26,8 @@ public class EmailNotification implements EventNotification {
                                     .withText(new Content()
                                             .withCharset("UTF-8").withData(results)))
                             .withSubject(new Content()
-                                    .withCharset("UTF-8").withData("WebDriver Test Results")))
+                                    .withCharset("UTF-8")
+                                    .withData((success ? "SUCCESS" : "FAILURE") + " WebDriver Test Results")))
                     .withSource("admin@matthewcasperson.com");
             client.sendEmail(request);
         } catch (final Exception ex) {
