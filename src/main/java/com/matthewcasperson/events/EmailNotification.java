@@ -7,9 +7,11 @@ import com.amazonaws.services.simpleemail.model.*;
 
 public class EmailNotification implements EventNotification {
     private final String to;
+    private final String from;
 
-    public EmailNotification(final String to) {
+    public EmailNotification(final String to, final String from) {
         this.to = to;
+        this.from = from;
     }
 
     @Override
@@ -28,7 +30,7 @@ public class EmailNotification implements EventNotification {
                             .withSubject(new Content()
                                     .withCharset("UTF-8")
                                     .withData((success ? "SUCCESS" : "FAILURE") + " WebDriver Test Results")))
-                    .withSource("admin@matthewcasperson.com");
+                    .withSource(from);
             client.sendEmail(request);
         } catch (final Exception ex) {
             System.out.println("The email was not sent. Error message: "

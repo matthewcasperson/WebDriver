@@ -36,10 +36,14 @@ class LambdaInput {
 }
 
 public class LambdaEntry {
-    private static final String CHROME_HEADLESS_PACKAGE = "https://s3.amazonaws.com/webdriver-testing-resources/stable-headless-chromium-amazonlinux-2017-03(1).zip";
-    private static final String CHROME_DRIVER = "https://s3.amazonaws.com/webdriver-testing-resources/chromedriver_linux64(1).zip";
+    private static final String CHROME_HEADLESS_PACKAGE =
+            "https://s3.amazonaws.com/webdriver-testing-resources/stable-headless-chromium-amazonlinux-2017-03(1).zip";
+    private static final String CHROME_DRIVER =
+            "https://s3.amazonaws.com/webdriver-testing-resources/chromedriver_linux64(1).zip";
     private static final List<EventNotification> NOTIFICATIONS = Arrays.asList(
-            new EmailNotification("admin@matthewcasperson.com"));
+            new EmailNotification(
+                    "admin@matthewcasperson.com",
+                    "admin@matthewcasperson.com"));
 
     public String runCucumber(final LambdaInput details) throws Throwable {
 
