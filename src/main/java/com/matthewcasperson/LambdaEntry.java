@@ -43,11 +43,9 @@ public class LambdaEntry {
 
     public String runCucumber(final LambdaInput details) throws Throwable {
 
-        System.out.println("STARTING CUCUMBER WEBDRIVER TEST");
+        System.out.println("STARTING Cucumber Test ID " + details.getId());
         System.out.println("FEATURE");
         System.out.println(details.getFeature());
-        System.out.println("ID");
-        System.out.println(details.getId());
 
         File driverDirectory = null;
         File chromeDirectory = null;
